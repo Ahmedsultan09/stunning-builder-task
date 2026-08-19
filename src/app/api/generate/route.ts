@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       system: buildSystemPrompt(integrations),
       prompt,
       reasoning: "low",
-      maxOutputTokens: 900,
+      maxOutputTokens: 1_200,
       timeout: GENERATION_TIMEOUT_MS,
       abortSignal: request.signal,
     });

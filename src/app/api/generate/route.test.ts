@@ -100,7 +100,7 @@ describe("POST /api/generate", () => {
         model: "groq-model",
         prompt: "Build a subscription reporting dashboard",
         reasoning: "low",
-        maxOutputTokens: 900,
+        maxOutputTokens: 1_200,
         timeout: 30_000,
         system: expect.stringContaining("Stripe"),
       }),

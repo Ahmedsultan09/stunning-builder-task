@@ -12,7 +12,7 @@ BuildBrief turns a rough product idea into a concise, integration-aware product 
 - Accepts a product prompt between 10 and 2,000 characters.
 - Adds optional context for Stripe, Shopify, Gmail, Slack, and Google Sheets.
 - Constructs the system prompt on the server so selected integrations reliably affect the result.
-- Streams a concise AI response shaped by the user’s idea and selected integration context.
+- Streams a concise three-part response shaped by the user’s idea and selected integration context.
 - Supports cancellation, retry, regeneration, safe Markdown rendering, and copy-to-clipboard.
 - Includes responsive, keyboard-accessible idle, loading, success, validation, timeout, and provider-error states.
 

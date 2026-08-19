@@ -19,12 +19,15 @@ describe("buildSystemPrompt", () => {
     );
   });
 
-  it("keeps generated details clearly framed as recommendations", () => {
+  it("keeps the response concise and inside the requested scope", () => {
     const prompt = buildSystemPrompt([]);
 
     expect(prompt).toContain("never as already connected features");
-    expect(prompt).toContain("Do not invent domains");
-    expect(prompt).toContain("details as recommendations");
-    expect(prompt).toContain("Adapt the structure");
+    expect(prompt).toContain("Do not mention unselected integrations");
+    expect(prompt).toContain("Do not invent features");
+    expect(prompt).toContain("## Product idea");
+    expect(prompt).toContain("## Integration context");
+    expect(prompt).toContain("## MVP outline");
+    expect(prompt).toContain("under 350 words");
   });
 });

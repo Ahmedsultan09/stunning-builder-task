@@ -15,7 +15,7 @@ The model response streams into a structured result panel. Users can stop genera
 ### Safer request boundaries
 
 - Prompt length is limited to 10–2,000 characters.
-- Output is capped at 1,200 tokens.
+- Output is capped at 700 tokens.
 - Generation has a 30-second SDK timeout.
 - The model key stays server-only.
 - Raw model HTML is ignored.

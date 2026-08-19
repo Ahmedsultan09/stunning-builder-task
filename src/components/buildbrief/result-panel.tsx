@@ -263,7 +263,7 @@ function EmptyResult() {
 function LoadingResult() {
   return (
     <div className="space-y-6 py-2" aria-label="Generating your build brief">
-      {["Product summary", "Primary user flow", "Suggested architecture"].map(
+      {["Product idea", "Integration context", "MVP outline"].map(
         (label, index) => (
           <div key={label} className="space-y-2.5">
             <div className="flex items-center gap-2">

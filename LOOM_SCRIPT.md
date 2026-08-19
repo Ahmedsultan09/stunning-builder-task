@@ -24,7 +24,7 @@ Show three files only:
 
 1. `src/lib/integrations.ts` — trusted catalog and typed IDs.
 2. `src/lib/system-prompt.ts` — server-only context construction and response contract.
-3. `src/app/api/generate/route.ts` — validation, Gateway model, bounds, timeout, first-chunk handling, and streaming.
+3. `src/app/api/generate/route.ts` — validation, OpenAI model, bounds, timeout, first-chunk handling, and streaming.
 
 Mention that user input remains a user message and is not interpolated into the system role.
 

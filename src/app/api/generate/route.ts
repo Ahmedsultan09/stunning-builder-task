@@ -1,3 +1,4 @@
+import { openai } from "@ai-sdk/openai";
 import {
   createTextStreamResponse,
   streamText,
@@ -12,11 +13,12 @@ import { buildSystemPrompt } from "@/lib/system-prompt";
 export const runtime = "nodejs";
 export const maxDuration = 35;
 
-const MODEL_ID = "anthropic/claude-sonnet-5";
+const MODEL_ID = "gpt-5.4";
 const GENERATION_TIMEOUT_MS = 30_000;
 
 type ApiErrorCode =
   | "INVALID_REQUEST"
+  | "CONFIGURATION_ERROR"
   | "UPSTREAM_ERROR"
   | "TIMEOUT";
 
@@ -84,10 +86,19 @@ export async function POST(request: Request) {
   try {
     const { prompt, integrations } = await parseRequest(request);
 
+    if (!process.env.OPENAI_API_KEY) {
+      return errorResponse(
+        502,
+        "CONFIGURATION_ERROR",
+        "AI generation is not configured for this environment.",
+      );
+    }
+
     const result = streamText({
-      model: MODEL_ID,
+      model: openai(MODEL_ID),
       system: buildSystemPrompt(integrations),
       prompt,
+      reasoning: "low",
       maxOutputTokens: 900,
       timeout: GENERATION_TIMEOUT_MS,
       abortSignal: request.signal,

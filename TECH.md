@@ -16,7 +16,7 @@ AI SDK 7 adds more production depth around the existing provider-neutral generat
 - Global telemetry, tracing-channel events, lifecycle hooks, and performance statistics.
 - Provider-neutral real-time voice and experimental video generation.
 
-BuildBrief uses the smallest useful part of this stack: `streamText`, the default Vercel AI Gateway provider, a total timeout, and the v7 stateless text-stream response helpers.
+BuildBrief uses the smallest useful part of this stack: `streamText`, the direct OpenAI provider, portable low reasoning, a total timeout, and the v7 stateless text-stream response helpers. AI SDK keeps the application-level streaming contract independent of that provider choice.
 
 ## How could Stunning use it?
 
@@ -46,7 +46,7 @@ The most valuable near-term use is not “make everything an agent.” It is sta
 
 Yes, selectively.
 
-I would use the stable generation, streaming, Gateway, timeout, and core telemetry APIs in production today. They reduce provider coupling and give a strong TypeScript developer experience. I would adopt durable agents, harness adapters, and experimental media features only behind feature flags with workload-specific evaluations, cost limits, and rollback plans.
+I would use the stable generation, streaming, provider abstraction, timeout, and core telemetry APIs in production today. They reduce provider coupling and give a strong TypeScript developer experience. I would adopt durable agents, harness adapters, and experimental media features only behind feature flags with workload-specific evaluations, cost limits, and rollback plans.
 
 This task intentionally does not use an agent loop. The requirement is a single contextual generation, so `streamText` is simpler, cheaper, easier to test, and easier to reason about. Using the newest abstraction only where it adds value is a stronger production decision than adding autonomy for demonstration.
 
@@ -55,3 +55,4 @@ This task intentionally does not use an agent loop. The requirement is a single 
 - [AI SDK 7 release](https://vercel.com/blog/ai-sdk-7)
 - [AI SDK documentation](https://ai-sdk.dev/docs)
 - [Vercel AI Gateway](https://vercel.com/ai-gateway)
+- [AI SDK OpenAI provider](https://ai-sdk.dev/providers/ai-sdk-providers/openai)

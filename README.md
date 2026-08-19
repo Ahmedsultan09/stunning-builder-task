@@ -26,7 +26,7 @@ Next.js route handler
     ├─ Zod validation + duplicate normalization
     ├─ trusted integration catalog
     ├─ server-only system prompt construction
-    └─ AI SDK 7 → Vercel AI Gateway → Claude Sonnet 5
+    └─ AI SDK 7 → OpenAI provider → GPT-5.4
                          │
                          ▼
                   UTF-8 text stream
@@ -39,7 +39,7 @@ The page shell is a React Server Component. Only the interactive builder is a Cl
 - Next.js 16.3 App Router and React 19.2
 - TypeScript in strict mode
 - Tailwind CSS 4 and shadcn/UI with Radix primitives
-- Vercel AI SDK 7 and AI Gateway
+- Vercel AI SDK 7 and the direct OpenAI provider
 - Zod 4 request validation
 - Vitest, Testing Library, and Playwright
 
@@ -53,15 +53,15 @@ npm install
 cp .env.example .env.local
 ```
 
-For local development, add a valid Vercel AI Gateway key to `.env.local`:
+Add a valid OpenAI Platform API key to `.env.local`:
 
 ```env
-AI_GATEWAY_API_KEY=your_gateway_api_key
+OPENAI_API_KEY=your_openai_api_key
 ```
 
-Production deployments on Vercel use the automatically refreshed
-`VERCEL_OIDC_TOKEN`, so no long-lived Gateway secret is required there. The
-static key remains a supported local and CI fallback.
+The key is read only inside the server route and is never exposed to the
+browser. Configure the same variable as a sensitive Vercel environment
+variable for production.
 
 Then start the app:
 
@@ -83,7 +83,7 @@ npm run build      # production build
 npm run check      # lint + typecheck + tests + build
 ```
 
-The Playwright test intercepts the AI endpoint. This keeps automated runs deterministic and free from inference cost. A real Gateway request should still be smoke-tested manually before submission.
+The Playwright test intercepts the AI endpoint. This keeps automated runs deterministic and free from inference cost. A real OpenAI request should still be smoke-tested manually before submission.
 
 Additional responsive preview: [mobile layout](./public/buildbrief-mobile.png).
 
@@ -99,6 +99,14 @@ Additional responsive preview: [mobile layout](./public/buildbrief-mobile.png).
 ```
 
 The endpoint returns a UTF-8 text stream. Invalid input returns `400`; missing or unavailable model access returns `502`; a timeout before the response starts returns `504`. Input, output, and request duration are bounded to control individual request cost.
+
+## Provider choice
+
+The original architecture targeted Vercel AI Gateway with Claude Sonnet 5.
+The live deployment uses OpenAI directly because Gateway inference was blocked
+by account-level billing verification. This preserves a real streamed model
+response, AI SDK 7 provider abstraction, and all server-side safety boundaries;
+switching back to Gateway remains a one-line model-provider change.
 
 ## Design and engineering rationale
 

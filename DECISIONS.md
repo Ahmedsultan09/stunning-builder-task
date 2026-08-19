@@ -48,7 +48,7 @@ Before a broad launch I would add:
 
 1. User or anonymous-session identity with abuse-resistant verification.
 2. A distributed rate limiter with per-identity and per-IP budgets.
-3. Gateway spend limits, usage alerts, and model-call observability.
+3. Provider spend limits, usage alerts, and model-call observability.
 4. Content moderation and explicit prompt-injection evaluation.
 5. Structured logging that excludes prompt content and secrets.
 

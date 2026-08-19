@@ -17,6 +17,7 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.43",
     "ai": "^7.0.68",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

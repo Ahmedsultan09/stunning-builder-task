@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const aiMocks = vi.hoisted(() => ({
   streamText: vi.fn(),
 }));
+const providerMocks = vi.hoisted(() => ({
+  openai: vi.fn(() => "openai-model"),
+}));
+
+vi.mock("@ai-sdk/openai", () => ({
+  openai: providerMocks.openai,
+}));
 
 vi.mock("ai", () => ({
   streamText: aiMocks.streamText,
@@ -67,6 +74,7 @@ function request(body: unknown) {
 
 describe("POST /api/generate", () => {
   beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-key";
     aiMocks.streamText.mockReturnValue({
       stream: textPartStream([
         "## Product summary\n",
@@ -89,13 +97,15 @@ describe("POST /api/generate", () => {
     );
     expect(aiMocks.streamText).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "anthropic/claude-sonnet-5",
+        model: "openai-model",
         prompt: "Build a subscription reporting dashboard",
+        reasoning: "low",
         maxOutputTokens: 900,
         timeout: 30_000,
         system: expect.stringContaining("Stripe"),
       }),
     );
+    expect(providerMocks.openai).toHaveBeenCalledWith("gpt-5.4");
     expect(aiMocks.streamText.mock.calls[0]?.[0].system).not.toContain("Slack");
   });
 
@@ -109,6 +119,23 @@ describe("POST /api/generate", () => {
       error: {
         code: "INVALID_REQUEST",
         message: "Describe your idea in at least 10 characters.",
+      },
+    });
+    expect(aiMocks.streamText).not.toHaveBeenCalled();
+  });
+
+  it("returns 502 when the OpenAI key is missing", async () => {
+    delete process.env.OPENAI_API_KEY;
+
+    const response = await POST(
+      request({ prompt: "Build a useful product dashboard", integrations: [] }),
+    );
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: {
+        code: "CONFIGURATION_ERROR",
+        message: "AI generation is not configured for this environment.",
       },
     });
     expect(aiMocks.streamText).not.toHaveBeenCalled();

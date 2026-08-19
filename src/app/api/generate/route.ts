@@ -61,7 +61,13 @@ export async function POST(request: Request) {
   try {
     const { prompt, integrations } = await parseRequest(request);
 
-    if (!process.env.AI_GATEWAY_API_KEY) {
+    // Vercel deployments receive a short-lived OIDC token automatically.
+    // A static Gateway key remains the local/CI fallback and is never exposed
+    // to the browser.
+    if (
+      !process.env.AI_GATEWAY_API_KEY &&
+      !process.env.VERCEL_OIDC_TOKEN
+    ) {
       return errorResponse(
         502,
         "CONFIGURATION_ERROR",

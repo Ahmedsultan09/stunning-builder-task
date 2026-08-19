@@ -2,6 +2,9 @@
 
 BuildBrief turns a rough product idea into a concise, integration-aware product and engineering plan. It is a focused full-stack AI exercise built for the Stunning Full-Stack Vibe Coder candidate task.
 
+**[Live application](https://stunning-builder-task.vercel.app)** ·
+**[GitHub repository](https://github.com/Ahmedsultan09/stunning-builder-task)**
+
 ![BuildBrief desktop preview](./public/buildbrief-preview.png)
 
 ## What it does
@@ -50,11 +53,15 @@ npm install
 cp .env.example .env.local
 ```
 
-Add a valid Vercel AI Gateway key to `.env.local`:
+For local development, add a valid Vercel AI Gateway key to `.env.local`:
 
 ```env
 AI_GATEWAY_API_KEY=your_gateway_api_key
 ```
+
+Production deployments on Vercel use the automatically refreshed
+`VERCEL_OIDC_TOKEN`, so no long-lived Gateway secret is required there. The
+static key remains a supported local and CI fallback.
 
 Then start the app:
 

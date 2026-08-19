@@ -59,6 +59,7 @@ function request(body: unknown) {
 describe("POST /api/generate", () => {
   beforeEach(() => {
     process.env.AI_GATEWAY_API_KEY = "test-key";
+    delete process.env.VERCEL_OIDC_TOKEN;
     aiMocks.streamText.mockReturnValue({ stream: "provider-stream" });
     aiMocks.toTextStream.mockReturnValue(
       stringStream(["## Product summary\n", "A focused result."]),
@@ -106,6 +107,7 @@ describe("POST /api/generate", () => {
 
   it("returns 502 when Gateway credentials are missing", async () => {
     delete process.env.AI_GATEWAY_API_KEY;
+    delete process.env.VERCEL_OIDC_TOKEN;
 
     const response = await POST(
       request({ prompt: "Build a useful product dashboard", integrations: [] }),
@@ -118,6 +120,17 @@ describe("POST /api/generate", () => {
         message: "AI generation is not configured for this environment.",
       },
     });
+  });
+
+  it("accepts Vercel OIDC credentials without a static key", async () => {
+    delete process.env.AI_GATEWAY_API_KEY;
+    process.env.VERCEL_OIDC_TOKEN = "test-oidc-token";
+
+    const response = await POST(
+      request({ prompt: "Build a useful product dashboard", integrations: [] }),
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("maps first-chunk timeouts to 504", async () => {

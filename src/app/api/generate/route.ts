@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { groq } from "@ai-sdk/groq";
 import {
   createTextStreamResponse,
   streamText,
@@ -13,7 +13,7 @@ import { buildSystemPrompt } from "@/lib/system-prompt";
 export const runtime = "nodejs";
 export const maxDuration = 35;
 
-const MODEL_ID = "gpt-5.4";
+const MODEL_ID = "openai/gpt-oss-120b";
 const GENERATION_TIMEOUT_MS = 30_000;
 
 type ApiErrorCode =
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
   try {
     const { prompt, integrations } = await parseRequest(request);
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return errorResponse(
         502,
         "CONFIGURATION_ERROR",
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     }
 
     const result = streamText({
-      model: openai(MODEL_ID),
+      model: groq(MODEL_ID),
       system: buildSystemPrompt(integrations),
       prompt,
       reasoning: "low",

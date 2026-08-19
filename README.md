@@ -26,7 +26,7 @@ Next.js route handler
     ├─ Zod validation + duplicate normalization
     ├─ trusted integration catalog
     ├─ server-only system prompt construction
-    └─ AI SDK 7 → OpenAI provider → GPT-5.4
+    └─ AI SDK 7 → Groq provider → OpenAI GPT-OSS 120B
                          │
                          ▼
                   UTF-8 text stream
@@ -39,7 +39,7 @@ The page shell is a React Server Component. Only the interactive builder is a Cl
 - Next.js 16.3 App Router and React 19.2
 - TypeScript in strict mode
 - Tailwind CSS 4 and shadcn/UI with Radix primitives
-- Vercel AI SDK 7 and the direct OpenAI provider
+- Vercel AI SDK 7 and the direct Groq provider
 - Zod 4 request validation
 - Vitest, Testing Library, and Playwright
 
@@ -53,10 +53,10 @@ npm install
 cp .env.example .env.local
 ```
 
-Add a valid OpenAI Platform API key to `.env.local`:
+Add a free Groq API key to `.env.local`:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key
+GROQ_API_KEY=your_groq_api_key
 ```
 
 The key is read only inside the server route and is never exposed to the
@@ -83,7 +83,7 @@ npm run build      # production build
 npm run check      # lint + typecheck + tests + build
 ```
 
-The Playwright test intercepts the AI endpoint. This keeps automated runs deterministic and free from inference cost. A real OpenAI request should still be smoke-tested manually before submission.
+The Playwright test intercepts the AI endpoint. This keeps automated runs deterministic and free from inference cost. A real Groq request should still be smoke-tested manually before submission.
 
 Additional responsive preview: [mobile layout](./public/buildbrief-mobile.png).
 
@@ -103,10 +103,12 @@ The endpoint returns a UTF-8 text stream. Invalid input returns `400`; missing o
 ## Provider choice
 
 The original architecture targeted Vercel AI Gateway with Claude Sonnet 5.
-The live deployment uses OpenAI directly because Gateway inference was blocked
-by account-level billing verification. This preserves a real streamed model
-response, AI SDK 7 provider abstraction, and all server-side safety boundaries;
-switching back to Gateway remains a one-line model-provider change.
+Gateway inference was blocked by account-level billing verification, and the
+available OpenAI Platform organization had no API credit. The live deployment
+therefore uses Groq's free tier with OpenAI GPT-OSS 120B. This preserves a real
+streamed model response, AI SDK 7 provider abstraction, and all server-side
+safety boundaries without adding a payment requirement. The free tier is
+appropriate for a candidate-task demo, not an SLA-backed production workload.
 
 ## Design and engineering rationale
 

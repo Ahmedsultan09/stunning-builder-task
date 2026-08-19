@@ -4,11 +4,11 @@ const aiMocks = vi.hoisted(() => ({
   streamText: vi.fn(),
 }));
 const providerMocks = vi.hoisted(() => ({
-  openai: vi.fn(() => "openai-model"),
+  groq: vi.fn(() => "groq-model"),
 }));
 
-vi.mock("@ai-sdk/openai", () => ({
-  openai: providerMocks.openai,
+vi.mock("@ai-sdk/groq", () => ({
+  groq: providerMocks.groq,
 }));
 
 vi.mock("ai", () => ({
@@ -74,7 +74,7 @@ function request(body: unknown) {
 
 describe("POST /api/generate", () => {
   beforeEach(() => {
-    process.env.OPENAI_API_KEY = "test-key";
+    process.env.GROQ_API_KEY = "test-key";
     aiMocks.streamText.mockReturnValue({
       stream: textPartStream([
         "## Product summary\n",
@@ -97,7 +97,7 @@ describe("POST /api/generate", () => {
     );
     expect(aiMocks.streamText).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "openai-model",
+        model: "groq-model",
         prompt: "Build a subscription reporting dashboard",
         reasoning: "low",
         maxOutputTokens: 900,
@@ -105,7 +105,9 @@ describe("POST /api/generate", () => {
         system: expect.stringContaining("Stripe"),
       }),
     );
-    expect(providerMocks.openai).toHaveBeenCalledWith("gpt-5.4");
+    expect(providerMocks.groq).toHaveBeenCalledWith(
+      "openai/gpt-oss-120b",
+    );
     expect(aiMocks.streamText.mock.calls[0]?.[0].system).not.toContain("Slack");
   });
 
@@ -124,8 +126,8 @@ describe("POST /api/generate", () => {
     expect(aiMocks.streamText).not.toHaveBeenCalled();
   });
 
-  it("returns 502 when the OpenAI key is missing", async () => {
-    delete process.env.OPENAI_API_KEY;
+  it("returns 502 when the Groq key is missing", async () => {
+    delete process.env.GROQ_API_KEY;
 
     const response = await POST(
       request({ prompt: "Build a useful product dashboard", integrations: [] }),

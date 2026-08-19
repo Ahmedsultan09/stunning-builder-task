@@ -37,7 +37,7 @@ export default function Home() {
             variant="outline"
             className="border-white/10 bg-white/3 text-muted-foreground"
           >
-            Powered by GPT-5.4
+            Powered by GPT-OSS 120B
           </Badge>
         </div>
       </header>
@@ -94,7 +94,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-white/5">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-5 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p>BuildBrief — a focused full-stack AI product exercise.</p>
-          <p>Next.js 16 · AI SDK 7 · OpenAI</p>
+          <p>Next.js 16 · AI SDK 7 · Groq</p>
         </div>
       </footer>
     </div>

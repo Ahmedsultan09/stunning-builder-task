@@ -16,7 +16,7 @@ AI SDK 7 adds more production depth around the existing provider-neutral generat
 - Global telemetry, tracing-channel events, lifecycle hooks, and performance statistics.
 - Provider-neutral real-time voice and experimental video generation.
 
-BuildBrief uses the smallest useful part of this stack: `streamText`, the direct OpenAI provider, portable low reasoning, a total timeout, and the v7 stateless text-stream response helpers. AI SDK keeps the application-level streaming contract independent of that provider choice.
+BuildBrief uses the smallest useful part of this stack: `streamText`, the direct Groq provider, OpenAI GPT-OSS 120B, portable low reasoning, a total timeout, and the v7 stateless text-stream response helpers. AI SDK keeps the application-level streaming contract independent of that provider choice.
 
 ## How could Stunning use it?
 
@@ -55,4 +55,5 @@ This task intentionally does not use an agent loop. The requirement is a single 
 - [AI SDK 7 release](https://vercel.com/blog/ai-sdk-7)
 - [AI SDK documentation](https://ai-sdk.dev/docs)
 - [Vercel AI Gateway](https://vercel.com/ai-gateway)
-- [AI SDK OpenAI provider](https://ai-sdk.dev/providers/ai-sdk-providers/openai)
+- [AI SDK Groq provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq)
+- [Groq rate limits](https://console.groq.com/docs/rate-limits)

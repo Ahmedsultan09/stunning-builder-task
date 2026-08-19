@@ -16,7 +16,6 @@ const GENERATION_TIMEOUT_MS = 30_000;
 
 type ApiErrorCode =
   | "INVALID_REQUEST"
-  | "CONFIGURATION_ERROR"
   | "UPSTREAM_ERROR"
   | "TIMEOUT";
 
@@ -25,7 +24,10 @@ function errorResponse(
   code: ApiErrorCode,
   message: string,
 ) {
-  return Response.json({ error: { code, message } }, { status });
+  return Response.json(
+    { error: { code, message } },
+    { status, headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 function isTimeoutError(error: unknown) {
@@ -60,20 +62,6 @@ async function parseRequest(request: Request) {
 export async function POST(request: Request) {
   try {
     const { prompt, integrations } = await parseRequest(request);
-
-    // Vercel deployments receive a short-lived OIDC token automatically.
-    // A static Gateway key remains the local/CI fallback and is never exposed
-    // to the browser.
-    if (
-      !process.env.AI_GATEWAY_API_KEY &&
-      !process.env.VERCEL_OIDC_TOKEN
-    ) {
-      return errorResponse(
-        502,
-        "CONFIGURATION_ERROR",
-        "AI generation is not configured for this environment.",
-      );
-    }
 
     const result = streamText({
       model: MODEL_ID,

@@ -20,7 +20,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -114,18 +113,20 @@ export function ResultPanel({
   return (
     <Card
       aria-busy={status === "loading"}
-      className="min-h-[31rem] border-border/60 bg-card/80 shadow-2xl shadow-black/20"
+      className="min-h-[34rem] border-white/8 bg-card/88 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.75)] backdrop-blur-xl sm:min-h-[40rem] lg:sticky lg:top-6"
     >
-      <CardHeader className="border-b border-border/60 pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <Sparkles aria-hidden="true" className="size-3.5" />
+      <CardHeader className="border-b border-border/70 pb-5">
+        <CardTitle className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/12 text-primary">
+            <Sparkles aria-hidden="true" className="size-4" />
           </span>
-          Your build brief
+          <span>
+            <span className="block text-base font-semibold">AI response</span>
+            <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+              Generated from your idea and selected context.
+            </span>
+          </span>
         </CardTitle>
-        <CardDescription>
-          A focused product and engineering plan, generated in real time.
-        </CardDescription>
         <CardAction>
           <Badge
             variant="outline"
@@ -239,22 +240,22 @@ export function ResultPanel({
 function EmptyResult() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-      <div className="relative mb-6 grid grid-cols-3 gap-2">
-        {[Workflow, Layers3, ShieldCheck].map((Icon, index) => (
-          <span
-            key={index}
-            className="flex size-11 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground"
-          >
-            <Icon aria-hidden="true" className="size-4" />
-          </span>
-        ))}
-        <span className="absolute top-1/2 left-0 -z-10 h-px w-full bg-border" />
+      <div className="relative mb-7 flex size-20 items-center justify-center rounded-3xl border border-primary/15 bg-primary/5">
+        <span className="absolute inset-2 rounded-2xl border border-primary/10" />
+        <Workflow aria-hidden="true" className="size-6 text-primary" />
       </div>
-      <h3 className="text-sm font-medium">Your plan will appear here</h3>
+      <h3 className="text-base font-medium">Ready when you are</h3>
       <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-        Add your product idea and optional integration context. We will turn it
-        into a practical, scoped build brief.
+        Describe your idea, optionally select integrations, and your AI-generated
+        direction will stream here.
       </p>
+      <div className="mt-6 flex items-center gap-2 text-[11px] text-muted-foreground/75">
+        <Layers3 aria-hidden="true" className="size-3.5" />
+        Context-aware
+        <span aria-hidden="true">·</span>
+        <ShieldCheck aria-hidden="true" className="size-3.5" />
+        No external connections
+      </div>
     </div>
   );
 }

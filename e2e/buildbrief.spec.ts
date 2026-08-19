@@ -34,12 +34,14 @@ test("generates an integration-aware brief", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /describe the product/i }),
+    page.getByRole("heading", {
+      name: /turn your product idea into a clear build direction/i,
+    }),
   ).toBeVisible();
 
   await page
     .getByRole("button", {
-      name: /a subscription analytics dashboard for shopify merchants/i,
+      name: /shopify analytics/i,
     })
     .click();
   await page.getByRole("button", { name: /stripe/i }).click();

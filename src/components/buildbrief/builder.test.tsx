@@ -26,7 +26,10 @@ describe("Builder", () => {
     const user = userEvent.setup();
     render(<Builder />);
 
-    await user.type(screen.getByLabelText(/what do you want to build/i), "Short");
+    await user.type(
+      screen.getByLabelText(/describe what you want to build/i),
+      "Short",
+    );
     await user.click(
       screen.getByRole("button", { name: /generate build brief/i }),
     );
@@ -34,7 +37,9 @@ describe("Builder", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Add 5 more characters.",
     );
-    expect(screen.getByLabelText(/what do you want to build/i)).toHaveFocus();
+    expect(
+      screen.getByLabelText(/describe what you want to build/i),
+    ).toHaveFocus();
   });
 
   it("submits the prompt and selected integrations, then renders the stream", async () => {
@@ -50,7 +55,7 @@ describe("Builder", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: /a subscription analytics dashboard for shopify merchants/i,
+        name: /shopify analytics/i,
       }),
     );
     await user.click(screen.getByRole("button", { name: /stripe/i }));
@@ -89,7 +94,7 @@ describe("Builder", () => {
     const user = userEvent.setup();
     render(<Builder />);
 
-    const textarea = screen.getByLabelText(/what do you want to build/i);
+    const textarea = screen.getByLabelText(/describe what you want to build/i);
     await user.type(textarea, "Build an operations dashboard for remote teams");
     await user.click(
       screen.getByRole("button", { name: /generate build brief/i }),

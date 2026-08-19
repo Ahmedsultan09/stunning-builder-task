@@ -19,14 +19,12 @@ describe("buildSystemPrompt", () => {
     );
   });
 
-  it("requires the six stable response sections", () => {
+  it("keeps generated details clearly framed as recommendations", () => {
     const prompt = buildSystemPrompt([]);
 
-    expect(prompt).toContain("## Product summary");
-    expect(prompt).toContain("## Primary user flow");
-    expect(prompt).toContain("## Integration roles");
-    expect(prompt).toContain("## Suggested architecture");
-    expect(prompt).toContain("## MVP milestones");
-    expect(prompt).toContain("## Risks and assumptions");
+    expect(prompt).toContain("never as already connected features");
+    expect(prompt).toContain("Do not invent domains");
+    expect(prompt).toContain("details as recommendations");
+    expect(prompt).toContain("Adapt the structure");
   });
 });

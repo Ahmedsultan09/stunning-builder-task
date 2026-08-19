@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Sparkles, WandSparkles } from "lucide-react";
+import { ArrowRight, Sparkles, WandSparkles } from "lucide-react";
 
 import { IntegrationPicker } from "@/components/buildbrief/integration-picker";
 import {
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,9 +25,18 @@ import type { IntegrationId } from "@/lib/integrations";
 import { cn } from "@/lib/utils";
 
 const EXAMPLE_PROMPTS = [
-  "A subscription analytics dashboard for Shopify merchants",
-  "A customer feedback hub that alerts product teams in Slack",
-  "An invoice follow-up assistant for small creative agencies",
+  {
+    label: "Shopify analytics",
+    prompt: "A subscription analytics dashboard for Shopify merchants",
+  },
+  {
+    label: "Feedback hub",
+    prompt: "A customer feedback hub that alerts product teams in Slack",
+  },
+  {
+    label: "Invoice assistant",
+    prompt: "An invoice follow-up assistant for small creative agencies",
+  },
 ] as const;
 
 type ApiErrorPayload = {
@@ -196,26 +204,33 @@ export function Builder() {
 
   return (
     <section id="builder" aria-label="BuildBrief generator" className="scroll-mt-8">
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)]">
-        <Card className="border-border/60 bg-card/80 shadow-2xl shadow-black/20">
-          <CardHeader className="border-b border-border/60 pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                <WandSparkles aria-hidden="true" className="size-3.5" />
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.06fr)_minmax(24rem,0.94fr)]">
+        <Card className="border-white/8 bg-card/88 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.75)] backdrop-blur-xl">
+          <CardHeader className="border-b border-border/70 pb-5">
+            <CardTitle className="flex items-center gap-3">
+              <span className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/12 text-primary shadow-[0_0_24px_-8px_var(--primary)]">
+                <WandSparkles aria-hidden="true" className="size-4" />
               </span>
-              Shape your idea
+              <span>
+                <span className="block text-base font-semibold">Create your brief</span>
+                <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                  Two quick steps, then let AI do the rest.
+                </span>
+              </span>
             </CardTitle>
-            <CardDescription>
-              Give us the rough brief. Add context only where it helps.
-            </CardDescription>
           </CardHeader>
 
-          <CardContent>
-            <form onSubmit={submit} noValidate className="space-y-6">
-              <div className="space-y-2.5">
-                <label htmlFor="product-idea" className="text-sm font-medium">
-                  What do you want to build?
-                </label>
+          <CardContent className="pt-1">
+            <form onSubmit={submit} noValidate className="space-y-7">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 font-mono text-[10px] font-semibold text-primary">
+                    1
+                  </span>
+                  <label htmlFor="product-idea" className="text-sm font-medium">
+                    Describe what you want to build
+                  </label>
+                </div>
                 <Textarea
                   ref={textareaRef}
                   id="product-idea"
@@ -231,7 +246,7 @@ export function Builder() {
                   }}
                   placeholder="Build a subscription analytics dashboard for Shopify merchants that highlights churn risks..."
                   className={cn(
-                    "min-h-36 resize-none rounded-xl bg-background/60 p-4 text-base leading-7 shadow-inner placeholder:text-muted-foreground/65",
+                    "min-h-44 resize-none rounded-xl border-white/10 bg-background/65 p-4 text-base leading-7 shadow-inner shadow-black/10 placeholder:text-muted-foreground/55",
                     "focus-visible:border-primary/60 focus-visible:ring-primary/20",
                   )}
                 />
@@ -252,29 +267,31 @@ export function Builder() {
                 <p
                   id="prompt-error"
                   role="alert"
-                  className="min-h-5 text-xs text-destructive"
+                  className={cn(
+                    "text-xs text-destructive",
+                    showValidation && validationMessage ? "min-h-5" : "sr-only",
+                  )}
                 >
                   {showValidation ? validationMessage : null}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Try an example
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Or start with an example
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {EXAMPLE_PROMPTS.map((example) => (
                     <Button
-                      key={example}
+                      key={example.label}
                       type="button"
                       variant="outline"
                       size="sm"
                       disabled={status === "loading"}
-                      onClick={() => applyExample(example)}
-                      className="h-auto min-h-7 max-w-full justify-start py-1.5 text-left whitespace-normal"
+                      onClick={() => applyExample(example.prompt)}
+                      className="border-white/10 bg-white/3 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground"
                     >
-                      {example}
-                      <ArrowUpRight data-icon="inline-end" />
+                      {example.label}
                     </Button>
                   ))}
                 </div>
@@ -286,19 +303,20 @@ export function Builder() {
                 disabled={status === "loading"}
               />
 
-              <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-muted-foreground">
-                  Your prompt stays in this request and is not stored by BuildBrief.
-                </p>
+              <div className="space-y-3 border-t border-border/60 pt-5">
                 <Button
                   type="submit"
                   size="lg"
                   disabled={status === "loading"}
-                  className="h-11 shrink-0 rounded-xl px-5 shadow-lg shadow-primary/20"
+                  className="h-12 w-full rounded-xl px-5 text-sm shadow-[0_14px_34px_-14px_var(--primary)]"
                 >
                   <Sparkles data-icon="inline-start" />
                   {status === "loading" ? "Generating…" : "Generate build brief"}
+                  {status !== "loading" ? <ArrowRight data-icon="inline-end" /> : null}
                 </Button>
+                <p className="text-center text-[11px] leading-5 text-muted-foreground">
+                  Dummy integrations provide AI context only. No accounts are connected.
+                </p>
               </div>
             </form>
           </CardContent>

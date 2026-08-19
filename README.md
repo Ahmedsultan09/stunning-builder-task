@@ -12,7 +12,7 @@ BuildBrief turns a rough product idea into a concise, integration-aware product 
 - Accepts a product prompt between 10 and 2,000 characters.
 - Adds optional context for Stripe, Shopify, Gmail, Slack, and Google Sheets.
 - Constructs the system prompt on the server so selected integrations reliably affect the result.
-- Streams a structured build brief covering the product, flow, integrations, architecture, milestones, and risks.
+- Streams a concise AI response shaped by the user’s idea and selected integration context.
 - Supports cancellation, retry, regeneration, safe Markdown rendering, and copy-to-clipboard.
 - Includes responsive, keyboard-accessible idle, loading, success, validation, timeout, and provider-error states.
 
@@ -112,7 +112,7 @@ appropriate for a candidate-task demo, not an SLA-backed production workload.
 
 ## Design and engineering rationale
 
-- The visual direction uses dark neutral surfaces, one violet accent, Geist typography, and restrained ambient lighting. It feels AI-native without relying on excessive gradients or glass effects.
+- The visual direction uses dark neutral surfaces, one violet accent, Geist typography, restrained ambient lighting, and a focused two-step workspace.
 - Integration selection uses real buttons with `aria-pressed`, so the interaction works with keyboard and assistive technology.
 - User input is sent as a user message, never interpolated into the system role. Only trusted integration metadata is added to the system prompt.
 - The route reads the first model chunk before sending response headers. Provider setup failures can therefore return a useful HTTP status instead of a broken `200` stream.

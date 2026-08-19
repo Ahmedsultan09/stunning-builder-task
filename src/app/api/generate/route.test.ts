@@ -103,6 +103,19 @@ describe("POST /api/generate", () => {
     expect(aiMocks.streamText).not.toHaveBeenCalled();
   });
 
+  it("streams a valid request with no optional integrations", async () => {
+    const response = await POST(
+      request({ prompt: "Build a useful product dashboard", integrations: [] }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(aiMocks.streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: expect.stringContaining("No optional integrations selected"),
+      }),
+    );
+  });
+
   it("maps first-chunk timeouts to 504", async () => {
     aiMocks.toTextStream.mockReturnValue(
       new ReadableStream({

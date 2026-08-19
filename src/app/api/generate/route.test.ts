@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const aiMocks = vi.hoisted(() => ({
   streamText: vi.fn(),
-  toTextStream: vi.fn(),
 }));
 
 vi.mock("ai", () => ({
   streamText: aiMocks.streamText,
-  toTextStream: aiMocks.toTextStream,
   createTextStreamResponse: ({
     stream,
     headers,
@@ -39,10 +37,21 @@ vi.mock("ai", () => ({
 
 import { POST } from "@/app/api/generate/route";
 
-function stringStream(chunks: string[]) {
-  return new ReadableStream<string>({
+function textPartStream(chunks: string[]) {
+  return new ReadableStream({
     start(controller) {
-      chunks.forEach((chunk) => controller.enqueue(chunk));
+      chunks.forEach((text) =>
+        controller.enqueue({ type: "text-delta", id: "text-1", text }),
+      );
+      controller.close();
+    },
+  });
+}
+
+function errorPartStream(error: unknown) {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue({ type: "error", error });
       controller.close();
     },
   });
@@ -58,10 +67,12 @@ function request(body: unknown) {
 
 describe("POST /api/generate", () => {
   beforeEach(() => {
-    aiMocks.streamText.mockReturnValue({ stream: "provider-stream" });
-    aiMocks.toTextStream.mockReturnValue(
-      stringStream(["## Product summary\n", "A focused result."]),
-    );
+    aiMocks.streamText.mockReturnValue({
+      stream: textPartStream([
+        "## Product summary\n",
+        "A focused result.",
+      ]),
+    });
   });
 
   it("streams a valid integration-aware request", async () => {
@@ -117,13 +128,11 @@ describe("POST /api/generate", () => {
   });
 
   it("maps first-chunk timeouts to 504", async () => {
-    aiMocks.toTextStream.mockReturnValue(
-      new ReadableStream({
-        start(controller) {
-          controller.error(new DOMException("Timed out", "TimeoutError"));
-        },
-      }),
-    );
+    aiMocks.streamText.mockReturnValue({
+      stream: errorPartStream(
+        new DOMException("Timed out", "TimeoutError"),
+      ),
+    });
 
     const response = await POST(
       request({ prompt: "Build a useful product dashboard", integrations: [] }),
@@ -133,13 +142,9 @@ describe("POST /api/generate", () => {
   });
 
   it("maps first-chunk provider failures to 502", async () => {
-    aiMocks.toTextStream.mockReturnValue(
-      new ReadableStream({
-        start(controller) {
-          controller.error(new Error("Provider unavailable"));
-        },
-      }),
-    );
+    aiMocks.streamText.mockReturnValue({
+      stream: errorPartStream(new Error("Provider unavailable")),
+    });
 
     const response = await POST(
       request({ prompt: "Build a useful product dashboard", integrations: [] }),

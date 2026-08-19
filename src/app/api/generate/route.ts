@@ -1,7 +1,8 @@
 import {
   createTextStreamResponse,
   streamText,
-  toTextStream,
+  type TextStreamPart,
+  type ToolSet,
 } from "ai";
 import { ZodError } from "zod";
 
@@ -59,6 +60,26 @@ async function parseRequest(request: Request) {
   return generateRequestSchema.parse(body);
 }
 
+function toCheckedTextStream<TOOLS extends ToolSet>(
+  stream: ReadableStream<TextStreamPart<TOOLS>>,
+) {
+  return stream.pipeThrough(
+    new TransformStream<TextStreamPart<TOOLS>, string>({
+      transform(part, controller) {
+        if (part.type === "text-delta") {
+          controller.enqueue(part.text);
+        } else if (part.type === "error") {
+          // AI SDK streams provider failures as typed parts. Promote them to
+          // stream errors so pre-header failures become stable 502/504 replies
+          // and mid-stream failures reach the client instead of looking like a
+          // successful empty response.
+          controller.error(part.error);
+        }
+      },
+    }),
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const { prompt, integrations } = await parseRequest(request);
@@ -72,7 +93,7 @@ export async function POST(request: Request) {
       abortSignal: request.signal,
     });
 
-    const source = toTextStream({ stream: result.stream });
+    const source = toCheckedTextStream(result.stream);
     const reader = source.getReader();
 
     // Read the first chunk before sending headers so setup/provider failures can

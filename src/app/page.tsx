@@ -1,33 +1,18 @@
-import {
-  Layers3,
-  Sparkles,
-} from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { Builder } from "@/components/buildbrief/builder";
+import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
+import { getViewer } from "@/lib/auth";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const viewer = await getViewer();
+
   return (
     <div className="site-shell flex min-h-screen flex-col overflow-hidden">
-      <header className="relative z-20 border-b border-white/6 bg-background/45 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
-          <a
-            href="#top"
-            aria-label="BuildBrief home"
-            className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <Layers3 aria-hidden="true" className="size-4" />
-            </span>
-            <span className="font-semibold tracking-tight">BuildBrief</span>
-          </a>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]" />
-            AI planner
-          </div>
-        </div>
-      </header>
+      <SiteHeader viewer={viewer} />
 
       <main id="top" className="relative z-10 flex-1">
         <section className="mx-auto w-full max-w-6xl px-5 pt-12 pb-9 sm:px-8 sm:pt-18 sm:pb-12">
@@ -43,14 +28,14 @@ export default function Home() {
               Turn your product idea into a clear build direction.
             </h1>
             <p className="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-              Describe what you want to create, add the integrations that matter,
-              and get a focused AI response shaped around your context.
+              Describe what you want to create, add the integrations that
+              matter, and get a focused AI response shaped around your context.
             </p>
           </div>
         </section>
 
         <div className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-8 sm:pb-28">
-          <Builder />
+          <Builder canPersist={Boolean(viewer)} />
         </div>
       </main>
 

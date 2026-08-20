@@ -30,10 +30,16 @@ Inputs have real labels and described validation. Integration cards expose `aria
 
 The project has unit tests for validation and prompt construction, route tests for success and failure behavior, component tests for the core interaction, a mocked Playwright journey, strict TypeScript, zero-warning linting, and a production build gate.
 
+### Optional authenticated history
+
+Anonymous generation remains frictionless, while Google-authenticated users can automatically save completed briefs. Supabase Postgres stores a normalized `briefs` → `brief_integrations` → `integrations` relationship. Every exposed table has explicit grants and Row Level Security, and the application uses only the publishable key with the signed-in user's cookie session.
+
+The save operation is an atomic `security invoker` database function. A client-generated request UUID makes retries idempotent, so a temporary network failure cannot create duplicate history rows. Users can read and delete only their own saved briefs.
+
 ## What did I intentionally leave out?
 
 - Real Stripe, Shopify, Gmail, Slack, or Google Sheets OAuth and API calls.
-- Accounts, authentication, prompt history, database persistence, or collaboration.
+- Profiles, teams, sharing, collaboration, or organization-level roles.
 - Multi-model controls, agent loops, tool calling, and autonomous actions.
 - Analytics, full tracing, moderation infrastructure, and enterprise audit logs.
 - A distributed rate-limit service.
@@ -42,7 +48,7 @@ These are reasonable next steps for a validated product, but none is required to
 
 ## What is the biggest production risk?
 
-The public, unauthenticated inference endpoint can be abused and create unbounded aggregate model spend. Input, output, and timeout limits cap a single request, but they do not stop a caller from making many requests. An in-memory counter would provide false confidence on serverless infrastructure because state is not shared reliably across instances.
+The public, unauthenticated inference endpoint can be abused and create unbounded aggregate model spend. Authentication and RLS protect saved user data, but they intentionally do not block the assignment's anonymous demo flow. Input, output, and timeout limits cap a single request, but they do not stop a caller from making many requests. An in-memory counter would provide false confidence on serverless infrastructure because state is not shared reliably across instances.
 
 Before a broad launch I would add:
 

@@ -1,45 +1,83 @@
-# Loom recording guide — target 4:40
+# Loom video script — حوالي 5 دقايق
 
-Keep your face visible, use your own voice, and record in one take. Close unrelated tabs and notifications before starting.
+السكريبت بالعامية المصرية، مع المصطلحات التقنية بالإنجليزي. الكلام بين علامتي الاقتباس هو النص المقترح، والتعليمات المكتوبة تحت **على الشاشة** هي اللي تتعرض أثناء التسجيل.
 
 ## 0:00–0:25 — Introduction
 
-“Hi, I’m Ahmed. I built BuildBrief for the Stunning full-stack task. My product decision was to turn the prompt into a useful implementation brief rather than a generic chatbot response, while keeping the architecture intentionally small enough for the timebox.”
+**على الشاشة:** افتح الـ live application وخلي الكاميرا ظاهرة.
 
-## 0:25–2:10 — Product demo
+“Hi، أنا أحمد، وده حلّي للـ Stunning Full-Stack Task. سميت الـ product **BuildBrief**، وفكرته إنه يحوّل أي product idea بسيطة لـ clear technical build brief باستخدام AI، مع integrations context، optional authentication، وprivate persistence. حاولت أخلي الـ scope مركز، لكن في نفس الوقت أوضح إني بنيت end-to-end frontend وbackend flow.”
 
-1. Show the mobile or narrow layout briefly, then switch to desktop.
-2. Use the Shopify analytics example.
-3. Select Stripe and Slack and mention that the cards are contextual, not connected accounts.
-4. Generate the brief and point out streaming, selected-integration badges, stable sections, cancel, copy, and regenerate.
-5. Make one second request with a different integration selection so the changed context is visible.
+## 0:25–1:10 — Anonymous product flow
 
-Suggested narration:
+**على الشاشة:** ابدأ وأنت signed out، اختار مثال Shopify analytics، ثم Stripe وSlack، واضغط Generate.
 
-“The prompt and selected IDs go to one server endpoint. The response starts streaming as soon as the provider returns content. Changing the selected integrations changes the trusted system context, so they affect the plan without pretending we implemented OAuth.”
+“أول قرار product هنا إن الـ authentication اختياري. أي visitor يقدر يكتب فكرته ويعمل generation فورًا من غير friction.
 
-## 2:10–3:25 — Architecture and code
+هختار مثال Shopify analytics، ومعاه Stripe وSlack. الـ integrations هنا dummy context، مش connected accounts، وده مقصود حسب الـ task. الـ selected IDs بتتبعت للـ backend، والـ trusted catalog على السيرفر هو اللي بيحوّلها لـ system context؛ يعني الـ user ما يقدرش يحقن system instructions بنفسه.
 
-Show three files only:
+لما أضغط Generate، الـ response بيظهر streaming بدل ما أستنى النتيجة كاملة. عندي كمان cancel، retry، regenerate، وcopy، والـ Markdown بيتعرض من غير raw HTML.”
 
-1. `src/lib/integrations.ts` — trusted catalog and typed IDs.
-2. `src/lib/system-prompt.ts` — server-only context construction and response contract.
-3. `src/app/api/generate/route.ts` — validation, Groq-hosted GPT-OSS model, bounds, timeout, first-chunk handling, and streaming.
+**على الشاشة:** بعد اكتمال النتيجة، أشر إلى “Sign in to save future completed briefs”.
 
-Mention that user input remains a user message and is not interpolated into the system role.
+“بما إني anonymous، النتيجة دي مش بتتخزن. الـ UI بيوضح إن تسجيل الدخول هيحفظ الـ completed briefs الجاية، من غير ما يعطل الاستخدام الأساسي.”
 
-## 3:25–4:10 — Production judgment
+## 1:10–2:05 — Google authentication and automatic save
 
-Open `DECISIONS.md`.
+**على الشاشة:** اضغط Sign in، ثم Continue with Google، وأكمل OAuth. ارجع للصفحة الرئيسية وأظهر البريد وHistory وSign out في الـ header.
 
-“The improvement pass focused on validation, recovery states, accessibility, request bounds, and tests. I intentionally left out auth, persistence, real integrations, and an agent loop. The biggest risk is unauthenticated inference abuse. Per-request limits help, but the real fix is identity, a distributed limiter, budgets, and observability—not an in-memory counter on serverless.”
+“هسجل دلوقتي باستخدام Google OAuth. الـ flow مبني بـ Supabase Auth وPKCE، والـ callback بيعمل exchange للـ code مع validation للـ `next` path علشان يمنع open redirects.
 
-## 4:10–4:35 — Recent technology
+بعد تسجيل الدخول، الـ server بيتأكد من الـ signed claims باستخدام `getClaims()`، والـ Next.js 16 `proxy.ts` مسؤول عن refresh للـ cookie session وتمرير الـ updated cookies والـ no-cache headers.”
 
-Open `TECH.md`.
+**على الشاشة:** اعمل generation جديدة وأشر إلى Saving ثم Saved to history.
 
-“I chose AI SDK 7, released in June 2026. Its production additions include standardized reasoning, durable agents, approvals, sandboxing, and global telemetry. I would use its streaming and provider abstraction today. I did not use its agent loop here because a single contextual generation is simpler, cheaper, and correct for this task.”
+“دلوقتي هعمل generation جديدة. أول ما الـ stream يكتمل بنجاح، الـ authenticated user بيشوف `Saving…` وبعدها `Saved to history`.
 
-## 4:35–4:40 — Close
+كل model request بياخد client-generated UUID. لو حصل network failure، أقدر أعمل retry بنفس الـ request ID، والـ database unique constraint يمنع duplicate rows. ولو الـ save نفسه فشل، الـ generated output بيفضل ظاهر ومش بنضيّع شغل الـ user. الـ cancelled، failed، empty، أو anonymous generations ما بتتخزنش.”
 
-“The repository includes run instructions, automated tests, and the live Vercel deployment. Thank you for reviewing it.”
+## 2:05–2:45 — Protected History
+
+**على الشاشة:** افتح History، وسّع brief، أظهر prompt/date/badges/output، ثم احذف brief تجريبي.
+
+“صفحة History protected Server Component. لو مفيش authenticated session، بتحوّل المستخدم لـ login وترجعه لنفس الصفحة بعد النجاح.
+
+هنا بعرض آخر عشرين brief: الـ original prompt، وقت الإنشاء، integration badges، والـ AI output بشكل expandable. الحذف معمول بـ Server Action، وبعده `revalidatePath` بيحدّث الصفحة. أنا معتمد على RLS في authorization، والـ cascade foreign key بيمسح relations الخاصة بالـ brief تلقائيًا.”
+
+## 2:45–3:25 — Application architecture
+
+**على الشاشة:** افتح `src/app/api/briefs/route.ts` ثم `src/components/buildbrief/builder.tsx`.
+
+“الـ generation flow بيمر على `POST /api/generate`، وفيه Zod validation، server-only system prompt، request bounds، timeout، وstreaming من خلال AI SDK وGroq.
+
+أما persistence فبتمر على `POST /api/briefs`. الـ route بيتأكد من الـ payload، وبعد كده يعمل verified claims check. لو الـ user anonymous بيرجع `401`، ولو الـ input غلط بيرجع `400`. بعد كده بينادي cookie-scoped Supabase client باستخدام publishable key فقط. مفيش service-role أو secret database key جوه الـ application.”
+
+## 3:25–4:25 — Database relationships, atomic RPC, and RLS
+
+**على الشاشة:** افتح Mermaid ERD في README أو Supabase Table Editor، وأظهر الجداول الثلاثة والعلاقات.
+
+“بالنسبة للـ database design، عندي `auth.users` one-to-many مع `briefs`. وكل brief ليه many-to-many relation مع `integrations` عن طريق junction table اسمها `brief_integrations`.
+
+أنا ما عملتش chat conversations أو messages، لأن الـ product single-turn generator. الـ accurate domain object هنا هو saved brief، وده بيخلي الـ schema أبسط وأوضح.
+
+جدول `briefs` فيه owner `user_id`، الـ prompt، الـ output، `client_request_id` للـ idempotency، و`created_at`. جدول `integrations` read-only catalog، والـ junction table فيها composite primary key. كل العلاقات عليها foreign keys والـ required indexes.”
+
+**على الشاشة:** افتح migration وأظهر `save_brief` ثم policy “Users can read their own briefs”.
+
+“عملية الحفظ بتحصل من خلال `save_brief` Postgres function. هي `security invoker`، فمش بتتخطى RLS، وبتحفظ الـ brief والـ integration relations atomically في transaction واحدة. لو integration ID غير صالح، العملية كلها بتعمل rollback.
+
+RLS enabled على الجداول الثلاثة، ومعاه explicit Data API grants. مثال الـ select policy على `briefs` هو: `(select auth.uid()) = user_id`. بالتالي User A يقدر يشوف ويمسح rows بتاعته فقط، ومش يقدر يوصل لبيانات User B. والـ anonymous role ما عندوش table privileges أصلًا. الـ integrations متاحة read-only للـ authenticated users، ومفيش client write policy عليها.”
+
+## 4:25–4:50 — Verification and production judgment
+
+**على الشاشة:** افتح tests ثم `DECISIONS.md`.
+
+“الـ tests بتغطي invalid payloads، anonymous save، successful RPC، sanitized database errors، autosave، retry بنفس UUID، cancellation، save failure، unsafe OAuth redirects، protected History، وdelete revalidation. وعلى مستوى الـ database، المطلوب verify ownership isolation، cascade delete، rollback، وعدم تعديل integration catalog.
+
+أكبر production risk لسه هو abuse للـ public inference endpoint. الـ authentication وRLS بيحموا saved data، لكن مش rate limiting. قبل public launch هضيف distributed rate limiter، usage budgets، moderation، وobservability.”
+
+## 4:50–5:00 — Close
+
+**على الشاشة:** ارجع للـ live application.
+
+“فالنتيجة إن BuildBrief محافظ على anonymous AI demo سريع، وفي نفس الوقت بيعرض full-stack architecture حقيقية: Auth، server routes، Postgres relations، atomic persistence، وRLS authorization. شكرًا على وقتكم، ومستني الـ feedback.”

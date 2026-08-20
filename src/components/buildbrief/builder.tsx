@@ -7,14 +7,10 @@ import { IntegrationPicker } from "@/components/buildbrief/integration-picker";
 import {
   ResultPanel,
   type GenerationStatus,
+  type SaveStatus,
 } from "@/components/buildbrief/result-panel";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   PROMPT_MAX_LENGTH,
@@ -22,6 +18,7 @@ import {
   type GenerateRequest,
 } from "@/lib/generate-schema";
 import type { IntegrationId } from "@/lib/integrations";
+import type { SaveBriefRequest } from "@/lib/save-brief-schema";
 import { cn } from "@/lib/utils";
 
 const EXAMPLE_PROMPTS = [
@@ -45,7 +42,11 @@ type ApiErrorPayload = {
   };
 };
 
-export function Builder() {
+type BuilderProps = {
+  canPersist?: boolean;
+};
+
+export function Builder({ canPersist = false }: BuilderProps) {
   const [prompt, setPrompt] = useState("");
   const [selectedIntegrations, setSelectedIntegrations] = useState<
     IntegrationId[]
@@ -54,12 +55,16 @@ export function Builder() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [resultIntegrations, setResultIntegrations] = useState<IntegrationId[]>(
     [],
   );
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastRequestRef = useRef<GenerateRequest | null>(null);
+  const lastSaveRef = useRef<SaveBriefRequest | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(
@@ -96,19 +101,57 @@ export function Builder() {
     textareaRef.current?.focus();
   };
 
+  const saveBrief = async (payload: SaveBriefRequest) => {
+    setSaveStatus("saving");
+    setSaveError(null);
+
+    try {
+      const response = await fetch("/api/briefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = (await response
+          .json()
+          .catch(() => null)) as ApiErrorPayload | null;
+        throw new Error(
+          data?.error?.message ??
+            "The brief was generated but could not be saved.",
+        );
+      }
+
+      setSaveStatus("saved");
+    } catch (saveFailure) {
+      setSaveStatus("error");
+      setSaveError(
+        saveFailure instanceof Error
+          ? saveFailure.message
+          : "The brief was generated but could not be saved.",
+      );
+    }
+  };
+
   const runGeneration = async (payload: GenerateRequest) => {
     abortControllerRef.current?.abort();
     const controller = new AbortController();
+    const requestId = crypto.randomUUID();
     abortControllerRef.current = controller;
     lastRequestRef.current = payload;
+    lastSaveRef.current = null;
     setResultIntegrations(payload.integrations);
 
     setStatus("loading");
     setOutput("");
     setError(null);
     setNotice(null);
+    setIsComplete(false);
+    setSaveStatus("idle");
+    setSaveError(null);
 
     let receivedOutput = false;
+    let completeOutput = "";
 
     try {
       const response = await fetch("/api/generate", {
@@ -119,9 +162,9 @@ export function Builder() {
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | ApiErrorPayload
-          | null;
+        const data = (await response
+          .json()
+          .catch(() => null)) as ApiErrorPayload | null;
         throw new Error(
           data?.error?.message ??
             "The build brief could not be generated. Please try again.",
@@ -142,6 +185,7 @@ export function Builder() {
         const chunk = decoder.decode(value, { stream: true });
         if (chunk) {
           receivedOutput = true;
+          completeOutput += chunk;
           setOutput((current) => current + chunk);
         }
       }
@@ -149,6 +193,7 @@ export function Builder() {
       const finalChunk = decoder.decode();
       if (finalChunk) {
         receivedOutput = true;
+        completeOutput += finalChunk;
         setOutput((current) => current + finalChunk);
       }
 
@@ -157,11 +202,25 @@ export function Builder() {
       }
 
       setStatus("success");
+      setIsComplete(true);
+
+      if (canPersist) {
+        const savePayload: SaveBriefRequest = {
+          requestId,
+          prompt: payload.prompt,
+          integrations: payload.integrations,
+          output: completeOutput,
+        };
+        lastSaveRef.current = savePayload;
+        await saveBrief(savePayload);
+      }
     } catch (generationError) {
       if (controller.signal.aborted) {
         setStatus(receivedOutput ? "success" : "idle");
         setNotice(
-          receivedOutput ? "Generation stopped. The partial brief was kept." : null,
+          receivedOutput
+            ? "Generation stopped. The partial brief was kept."
+            : null,
         );
         return;
       }
@@ -198,12 +257,22 @@ export function Builder() {
     if (lastRequestRef.current) void runGeneration(lastRequestRef.current);
   };
 
+  const retrySave = () => {
+    if (lastSaveRef.current) void saveBrief(lastSaveRef.current);
+  };
+
   const cancel = () => {
     abortControllerRef.current?.abort();
   };
 
+  const isBusy = status === "loading" || saveStatus === "saving";
+
   return (
-    <section id="builder" aria-label="BuildBrief generator" className="scroll-mt-8">
+    <section
+      id="builder"
+      aria-label="BuildBrief generator"
+      className="scroll-mt-8"
+    >
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.06fr)_minmax(24rem,0.94fr)]">
         <Card className="border-white/8 bg-card/88 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.75)] backdrop-blur-xl">
           <CardHeader className="border-b border-border/70 pb-5">
@@ -212,7 +281,9 @@ export function Builder() {
                 <WandSparkles aria-hidden="true" className="size-4" />
               </span>
               <span>
-                <span className="block text-base font-semibold">Create your brief</span>
+                <span className="block text-base font-semibold">
+                  Create your brief
+                </span>
                 <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
                   Two quick steps, then let AI do the rest.
                 </span>
@@ -236,7 +307,7 @@ export function Builder() {
                   id="product-idea"
                   name="product-idea"
                   value={prompt}
-                  disabled={status === "loading"}
+                  disabled={isBusy}
                   maxLength={PROMPT_MAX_LENGTH + 100}
                   aria-invalid={showValidation && !isPromptValid}
                   aria-describedby="prompt-help prompt-count prompt-error"
@@ -287,7 +358,7 @@ export function Builder() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={status === "loading"}
+                      disabled={isBusy}
                       onClick={() => applyExample(example.prompt)}
                       className="border-white/10 bg-white/3 text-muted-foreground hover:border-primary/25 hover:bg-primary/8 hover:text-foreground"
                     >
@@ -300,22 +371,27 @@ export function Builder() {
               <IntegrationPicker
                 selected={selectedIntegrations}
                 onToggle={toggleIntegration}
-                disabled={status === "loading"}
+                disabled={isBusy}
               />
 
               <div className="space-y-3 border-t border-border/60 pt-5">
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={status === "loading"}
+                  disabled={isBusy}
                   className="h-12 w-full rounded-xl px-5 text-sm shadow-[0_14px_34px_-14px_var(--primary)]"
                 >
                   <Sparkles data-icon="inline-start" />
-                  {status === "loading" ? "Generating…" : "Generate build brief"}
-                  {status !== "loading" ? <ArrowRight data-icon="inline-end" /> : null}
+                  {status === "loading"
+                    ? "Generating…"
+                    : "Generate build brief"}
+                  {status !== "loading" ? (
+                    <ArrowRight data-icon="inline-end" />
+                  ) : null}
                 </Button>
                 <p className="text-center text-[11px] leading-5 text-muted-foreground">
-                  Dummy integrations provide AI context only. No accounts are connected.
+                  Dummy integrations provide AI context only. No accounts are
+                  connected.
                 </p>
               </div>
             </form>
@@ -323,13 +399,18 @@ export function Builder() {
         </Card>
 
         <ResultPanel
+          canPersist={canPersist}
+          isComplete={isComplete}
           status={status}
+          saveStatus={saveStatus}
+          saveError={saveError}
           output={output}
           error={error}
           notice={notice}
           selectedIntegrations={resultIntegrations}
           onCancel={cancel}
           onRetry={retry}
+          onRetrySave={retrySave}
         />
       </div>
     </section>

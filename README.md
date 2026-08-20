@@ -14,25 +14,25 @@ BuildBrief turns a rough product idea into a concise, integration-aware product 
 - Constructs the system prompt on the server so selected integrations reliably affect the result.
 - Streams a concise three-part response shaped by the user’s idea and selected integration context.
 - Supports cancellation, retry, regeneration, safe Markdown rendering, and copy-to-clipboard.
+- Offers optional Google sign-in, automatic saving, private history, and deletion.
 - Includes responsive, keyboard-accessible idle, loading, success, validation, timeout, and provider-error states.
 
 ## Architecture
 
 ```text
 Browser form
-    │  POST { prompt, integrations[] }
-    ▼
-Next.js route handler
-    ├─ Zod validation + duplicate normalization
-    ├─ trusted integration catalog
-    ├─ server-only system prompt construction
-    └─ AI SDK 7 → Groq provider → OpenAI GPT-OSS 120B
-                         │
-                         ▼
-                  UTF-8 text stream
+    ├─ POST /api/generate → AI SDK 7 → Groq → GPT-OSS 120B
+    │                                      │
+    │                                      ▼
+    │                               UTF-8 text stream
+    │
+    └─ completed + signed in → POST /api/briefs
+                                  │
+                                  ▼
+                    Supabase Auth + Postgres + RLS
 ```
 
-The page shell is a React Server Component. Only the interactive builder is a Client Component. There is no database, authentication layer, or external OAuth because the assignment explicitly treats integrations as prompt context.
+The page shell, authenticated navigation, and history reads are React Server Components. The interactive builder remains a Client Component. Integrations are still prompt context only; Google OAuth authenticates users for private brief persistence and does not connect any integration account.
 
 ## Stack
 
@@ -40,6 +40,7 @@ The page shell is a React Server Component. Only the interactive builder is a Cl
 - TypeScript in strict mode
 - Tailwind CSS 4 and shadcn/UI with Radix primitives
 - Vercel AI SDK 7 and the direct Groq provider
+- Supabase Auth, Postgres, Row Level Security, and `@supabase/ssr`
 - Zod 4 request validation
 - Vitest, Testing Library, and Playwright
 
@@ -57,11 +58,13 @@ Add a free Groq API key to `.env.local`:
 
 ```env
 GROQ_API_KEY=your_groq_api_key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
-The key is read only inside the server route and is never exposed to the
-browser. Configure the same variable as a sensitive Vercel environment
-variable for production.
+The Groq key is server-only. Supabase's publishable key is intentionally safe
+to expose because every public table has explicit grants and RLS policies.
+There is no service-role or secret Supabase key in the application.
 
 Then start the app:
 
@@ -100,6 +103,73 @@ Additional responsive preview: [mobile layout](./public/buildbrief-mobile.png).
 
 The endpoint returns a UTF-8 text stream. Invalid input returns `400`; missing or unavailable model access returns `502`; a timeout before the response starts returns `504`. Input, output, and request duration are bounded to control individual request cost.
 
+`POST /api/briefs`
+
+```json
+{
+  "requestId": "3f753e46-bb8a-4d5f-841a-283da7a6760b",
+  "prompt": "Build a subscription dashboard for small agencies",
+  "integrations": ["stripe", "slack"],
+  "output": "## Product idea\n..."
+}
+```
+
+This endpoint requires a verified Supabase session. It calls one
+`security invoker` Postgres function that atomically and idempotently stores
+the brief and its integration relationships. Invalid payloads return `400`,
+missing sessions return `401`, and persistence failures return `503` without
+exposing database details.
+
+## Data model and RLS
+
+```mermaid
+erDiagram
+  AUTH_USERS ||--o{ BRIEFS : owns
+  BRIEFS ||--o{ BRIEF_INTEGRATIONS : includes
+  INTEGRATIONS ||--o{ BRIEF_INTEGRATIONS : categorizes
+
+  AUTH_USERS {
+    uuid id PK
+  }
+  BRIEFS {
+    bigint id PK
+    uuid user_id FK
+    uuid client_request_id
+    text prompt
+    text output
+    timestamptz created_at
+  }
+  INTEGRATIONS {
+    text id PK
+    text name
+  }
+  BRIEF_INTEGRATIONS {
+    bigint brief_id PK,FK
+    text integration_id PK,FK
+  }
+```
+
+- `briefs` can only be selected, inserted, or deleted by their owner.
+- `brief_integrations` can only be read or inserted through an owned brief.
+- `integrations` is readable but immutable for authenticated application users.
+- Anonymous requests receive no table privileges. Anonymous AI generation does not touch Supabase.
+- Foreign keys and RLS lookup columns are indexed, and deleting a brief cascades to its relationship rows.
+
+The schema is versioned in `supabase/migrations`. To reproduce it, link a
+Supabase project and apply the migration with the Supabase CLI.
+
+## Google OAuth setup
+
+1. Create a Google Cloud OAuth client for a Web application.
+2. Add `http://localhost:3000` and the production origin as authorized JavaScript origins.
+3. Add `https://<project-ref>.supabase.co/auth/v1/callback` as the Google authorized redirect URI.
+4. Enable Google in Supabase Auth and add the client ID and secret there.
+5. Set the Supabase Site URL to the production origin and allow both local and production `/auth/callback` URLs.
+
+The local Supabase config references
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and
+`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET`; neither credential is committed.
+
 ## Provider choice
 
 The original architecture targeted Vercel AI Gateway with Claude Sonnet 5.
@@ -117,6 +187,6 @@ appropriate for a candidate-task demo, not an SLA-backed production workload.
 - User input is sent as a user message, never interpolated into the system role. Only trusted integration metadata is added to the system prompt.
 - The route reads the first model chunk before sending response headers. Provider setup failures can therefore return a useful HTTP status instead of a broken `200` stream.
 - Model Markdown is rendered without raw HTML.
-- Prompts and generated briefs are not persisted or intentionally logged by the application.
+- Anonymous prompts are never persisted. Completed briefs are saved only for signed-in users and remain private through RLS.
 
 For prioritization and production tradeoffs, see [DECISIONS.md](./DECISIONS.md). For the recent-technology assessment, see [TECH.md](./TECH.md).

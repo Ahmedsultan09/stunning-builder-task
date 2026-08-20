@@ -46,7 +46,10 @@ describe("Builder", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
-        textResponse(["## Product summary\n", "A focused subscription product."]),
+        textResponse([
+          "## Product summary\n",
+          "A focused subscription product.",
+        ]),
       );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -72,12 +75,140 @@ describe("Builder", () => {
       await screen.findByText("A focused subscription product."),
     ).toBeInTheDocument();
     expect(screen.getByText("Complete")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(JSON.parse(String(requestInit.body))).toEqual({
       prompt: "A subscription analytics dashboard for Shopify merchants",
       integrations: ["stripe"],
     });
+  });
+
+  it("auto-saves a completed brief for an authenticated user", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        textResponse(["## Product idea\n", "A saved subscription product."]),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 42,
+            createdAt: "2026-08-20T12:00:00.000Z",
+          }),
+          { status: 201, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    render(<Builder canPersist />);
+
+    await user.click(
+      screen.getByRole("button", { name: /shopify analytics/i }),
+    );
+    await user.click(screen.getByRole("button", { name: /stripe/i }));
+    await user.click(
+      screen.getByRole("button", { name: /generate build brief/i }),
+    );
+
+    expect(await screen.findByText(/saved to history/i)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/briefs");
+
+    const saveInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
+    expect(JSON.parse(String(saveInit.body))).toEqual({
+      requestId: expect.any(String),
+      prompt: "A subscription analytics dashboard for Shopify merchants",
+      integrations: ["stripe"],
+      output: "## Product idea\nA saved subscription product.",
+    });
+  });
+
+  it("keeps generated output visible when saving fails", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        textResponse(["A generated brief that remains visible."]),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: { message: "The brief could not be saved." },
+          }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 42,
+            createdAt: "2026-08-20T12:00:00.000Z",
+          }),
+          { status: 201, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    render(<Builder canPersist />);
+
+    await user.type(
+      screen.getByLabelText(/describe what you want to build/i),
+      "Build an operations dashboard for remote teams",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /generate build brief/i }),
+    );
+
+    expect(
+      await screen.findByText("A generated brief that remains visible."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("The brief could not be saved."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /retry save/i }),
+    ).toBeInTheDocument();
+
+    const firstSaveBody = JSON.parse(
+      String((fetchMock.mock.calls[1]?.[1] as RequestInit).body),
+    );
+    await user.click(screen.getByRole("button", { name: /retry save/i }));
+
+    expect(await screen.findByText(/saved to history/i)).toBeInTheDocument();
+    const retrySaveBody = JSON.parse(
+      String((fetchMock.mock.calls[2]?.[1] as RequestInit).body),
+    );
+    expect(retrySaveBody.requestId).toBe(firstSaveBody.requestId);
+  });
+
+  it("does not persist a failed generation", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { message: "The model provider is unavailable." },
+        }),
+        { status: 502, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    render(<Builder canPersist />);
+
+    await user.type(
+      screen.getByLabelText(/describe what you want to build/i),
+      "Build an operations dashboard for remote teams",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /generate build brief/i }),
+    );
+
+    expect(
+      await screen.findByText("The model provider is unavailable."),
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("disables editing during a request and lets the user cancel", async () => {
@@ -92,7 +223,7 @@ describe("Builder", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const user = userEvent.setup();
-    render(<Builder />);
+    render(<Builder canPersist />);
 
     const textarea = screen.getByLabelText(/describe what you want to build/i);
     await user.type(textarea, "Build an operations dashboard for remote teams");
@@ -105,5 +236,6 @@ describe("Builder", () => {
 
     await waitFor(() => expect(textarea).toBeEnabled());
     expect(screen.getByText("Ready")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

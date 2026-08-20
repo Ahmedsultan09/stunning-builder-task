@@ -192,3 +192,13 @@ revoke all on function public.save_brief(uuid, text, text, text[])
   from public, anon;
 grant execute on function public.save_brief(uuid, text, text, text[])
   to authenticated;
+
+-- Supabase's optional automatic-RLS project setting installs this helper in
+-- public. Event triggers do not require Data API roles to execute it directly.
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    execute 'revoke execute on function public.rls_auto_enable() from public, anon, authenticated';
+  end if;
+end;
+$$;

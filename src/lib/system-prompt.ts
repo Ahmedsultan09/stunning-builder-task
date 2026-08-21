@@ -4,6 +4,7 @@ import {
 } from "@/lib/integrations";
 
 export function buildSystemPrompt(integrationIds: readonly IntegrationId[]) {
+  // Resolve validated IDs through the trusted catalog before composing model instructions.
   const selectedIntegrations = integrationIds
     .map((id) => INTEGRATION_BY_ID.get(id))
     .filter((integration) => integration !== undefined);

@@ -14,7 +14,7 @@ BuildBrief turns a rough product idea into a concise, integration-aware product 
 - Constructs the system prompt on the server so selected integrations reliably affect the result.
 - Streams a concise three-part response shaped by the user’s idea and selected integration context.
 - Supports cancellation, retry, regeneration, safe Markdown rendering, and copy-to-clipboard.
-- Offers optional Google sign-in, automatic saving, private history, and deletion.
+- Offers optional GitHub sign-in, automatic saving, private history, and deletion.
 - Includes responsive, keyboard-accessible idle, loading, success, validation, timeout, and provider-error states.
 
 ## Architecture
@@ -32,7 +32,7 @@ Browser form
                     Supabase Auth + Postgres + RLS
 ```
 
-The page shell, authenticated navigation, and history reads are React Server Components. The interactive builder remains a Client Component. Integrations are still prompt context only; Google OAuth authenticates users for private brief persistence and does not connect any integration account.
+The page shell, authenticated navigation, and history reads are React Server Components. The interactive builder remains a Client Component. Integrations are still prompt context only; GitHub OAuth authenticates users for private brief persistence and does not connect any integration account.
 
 ## Stack
 
@@ -158,17 +158,17 @@ erDiagram
 The schema is versioned in `supabase/migrations`. To reproduce it, link a
 Supabase project and apply the migration with the Supabase CLI.
 
-## Google OAuth setup
+## GitHub OAuth setup
 
-1. Create a Google Cloud OAuth client for a Web application.
-2. Add `http://localhost:3000` and the production origin as authorized JavaScript origins.
-3. Add `https://<project-ref>.supabase.co/auth/v1/callback` as the Google authorized redirect URI.
-4. Enable Google in Supabase Auth and add the client ID and secret there.
+1. Create an OAuth App in GitHub under **Settings → Developer settings → OAuth Apps**.
+2. Use the production origin as the Homepage URL.
+3. Use `https://<project-ref>.supabase.co/auth/v1/callback` as the Authorization callback URL.
+4. Enable GitHub in Supabase Auth and add the client ID and secret there.
 5. Set the Supabase Site URL to the production origin and allow both local and production `/auth/callback` URLs.
 
 The local Supabase config references
-`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and
-`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET`; neither credential is committed.
+`SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID` and
+`SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_SECRET`; neither credential is committed.
 
 ## Provider choice
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Layers3, ShieldCheck } from "lucide-react";
 
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getViewer } from "@/lib/auth";
 import { getSafeRedirectPath } from "@/lib/auth-redirect";
@@ -47,12 +47,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <CardContent className="space-y-5 pt-6">
           {callbackFailed ? (
             <p role="alert" className="text-center text-sm text-destructive">
-              Google sign-in could not be completed. Please try again.
+              GitHub sign-in could not be completed. Please try again.
             </p>
           ) : null}
 
           {configured ? (
-            <GoogleSignInButton nextPath={nextPath} />
+            <GitHubSignInButton nextPath={nextPath} />
           ) : (
             <p role="alert" className="text-center text-sm text-destructive">
               Sign-in is not configured for this environment.

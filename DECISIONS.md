@@ -32,7 +32,9 @@ The project has unit tests for validation and prompt construction, route tests f
 
 ### Optional authenticated history
 
-Anonymous generation remains frictionless, while Google-authenticated users can automatically save completed briefs. Supabase Postgres stores a normalized `briefs` → `brief_integrations` → `integrations` relationship. Every exposed table has explicit grants and Row Level Security, and the application uses only the publishable key with the signed-in user's cookie session.
+Anonymous generation remains frictionless, while GitHub-authenticated users can automatically save completed briefs. Supabase Postgres stores a normalized `briefs` → `brief_integrations` → `integrations` relationship. Every exposed table has explicit grants and Row Level Security, and the application uses only the publishable key with the signed-in user's cookie session.
+
+GitHub OAuth was chosen over Google for this demo because it provides a familiar reviewer experience without a separate consent-screen verification process or approval wait. The application still delegates session handling to Supabase and never stores provider credentials in the repository.
 
 The save operation is an atomic `security invoker` database function. A client-generated request UUID makes retries idempotent, so a temporary network failure cannot create duplicate history rows. Users can read and delete only their own saved briefs.
 

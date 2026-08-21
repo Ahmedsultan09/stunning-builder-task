@@ -190,3 +190,5 @@ appropriate for a candidate-task demo, not an SLA-backed production workload.
 - Anonymous prompts are never persisted. Completed briefs are saved only for signed-in users and remain private through RLS.
 
 For prioritization and production tradeoffs, see [DECISIONS.md](./DECISIONS.md). For the recent-technology assessment, see [TECH.md](./TECH.md).
+
+Loom video: https://www.loom.com/share/790996d669dd439299cfaa1b12fb772a
